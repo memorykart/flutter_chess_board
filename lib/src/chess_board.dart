@@ -101,8 +101,9 @@ class _ChessBoardState extends State<ChessBoard> {
                             ))
                         : Container();
 
-                    var dragTarget =
-                        DragTarget<PieceMoveData>(builder: (context, list, _) {
+                    var dragTarget = Container(
+                        child: DragTarget<PieceMoveData>(
+                            builder: (context, list, _) {
                       return draggable;
                     }, onWillAccept: (pieceMoveData) {
                       return widget.enableUserMoves ? true : false;
@@ -137,7 +138,7 @@ class _ChessBoardState extends State<ChessBoard> {
                       if (game.turn != moveColor) {
                         widget.onMove?.call();
                       }
-                    });
+                    }));
 
                     return dragTarget;
                   },
