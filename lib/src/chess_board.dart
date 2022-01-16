@@ -45,6 +45,7 @@ class ChessBoard extends StatefulWidget {
 class _ChessBoardState extends State<ChessBoard> {
   @override
   Widget build(BuildContext context) {
+    print("Hello world");
     return ValueListenableBuilder<Chess>(
       valueListenable: widget.controller,
       builder: (context, game, _) {

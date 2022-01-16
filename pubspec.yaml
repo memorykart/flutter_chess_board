@@ -1,17 +1,19 @@
 name: flutter_chess_board
 description: A Chessboard Widget for Flutter. Full support for PGN, FEN, SAN. Undo move, multiple board colors and arrow support.
 version: 1.0.1
-repository: https://www.github.com/deven98/flutter_chess_board
+publish_to: none
 
 dependencies:
   chess: ^0.7.0
   chess_vectors_flutter: ^1.0.12
+  forked_board:
+    git: "https://github.com/memorykart/flutter_chess_board.git"
 
   flutter:
     sdk: flutter
 
 environment:
-    sdk: ">2.12.0 <3.0.0"
+  sdk: ">2.12.0 <3.0.0"
 
 dev_dependencies:
   flutter_test:
