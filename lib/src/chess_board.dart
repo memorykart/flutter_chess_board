@@ -27,7 +27,9 @@ class ChessBoard extends StatefulWidget {
 
   final List<BoardArrow> arrows;
 
-  const ChessBoard({
+  late List<String> lastMove;
+
+  ChessBoard({
     Key? key,
     required this.controller,
     this.size,
@@ -81,17 +83,22 @@ class _ChessBoardState extends State<ChessBoard> {
                     );
 
                     var draggable = game.get(squareName) != null
-                        ? Draggable<PieceMoveData>(
-                            child: piece,
-                            feedback: piece,
-                            childWhenDragging: SizedBox(),
-                            data: PieceMoveData(
-                              squareName: squareName,
-                              pieceType:
-                                  pieceOnSquare?.type.toUpperCase() ?? 'P',
-                              pieceColor: pieceOnSquare?.color ?? Color.WHITE,
-                            ),
-                          )
+                        ? GestureDetector(
+                            onTap: () {
+                              print(piece.squareName);
+                              print(game.moves({'square': piece.squareName}));
+                            },
+                            child: Draggable<PieceMoveData>(
+                              child: piece,
+                              feedback: piece,
+                              childWhenDragging: SizedBox(),
+                              data: PieceMoveData(
+                                squareName: squareName,
+                                pieceType:
+                                    pieceOnSquare?.type.toUpperCase() ?? 'P',
+                                pieceColor: pieceOnSquare?.color ?? Color.WHITE,
+                              ),
+                            ))
                         : Container();
 
                     var dragTarget =
@@ -256,7 +263,7 @@ class BoardPiece extends StatelessWidget {
 
     switch (piece) {
       case "WP":
-        imageToDisplay = WhiteQueen();
+        imageToDisplay = WhitePawn();
         break;
       case "WR":
         imageToDisplay = WhiteRook();
