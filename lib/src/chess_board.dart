@@ -27,9 +27,7 @@ class ChessBoard extends StatefulWidget {
 
   final List<BoardArrow> arrows;
 
-  late List<String> lastMove;
-
-  ChessBoard({
+  const ChessBoard({
     Key? key,
     required this.controller,
     this.size,
@@ -45,6 +43,49 @@ class ChessBoard extends StatefulWidget {
 }
 
 class _ChessBoardState extends State<ChessBoard> {
+  List<PossibleMoves> selectedPieceMoves = [];
+
+  late List<String> lastMove;
+
+  Map<int, String> boardMap = {};
+
+  late PieceMoveData selectedPieceData;
+
+  checkAndMakeMove(
+      PieceMoveData pieceMoveData, var game, var squareName) async {
+    // A way to check if move occurred.
+    Color moveColor = game.turn;
+
+    if (pieceMoveData.pieceType == "P" &&
+        ((pieceMoveData.squareName[1] == "7" &&
+                squareName[1] == "8" &&
+                pieceMoveData.pieceColor == Color.WHITE) ||
+            (pieceMoveData.squareName[1] == "2" &&
+                squareName[1] == "1" &&
+                pieceMoveData.pieceColor == Color.BLACK))) {
+      var val = await _promotionDialog(context);
+
+      if (val != null) {
+        widget.controller.makeMoveWithPromotion(
+          from: pieceMoveData.squareName,
+          to: squareName,
+          pieceToPromoteTo: val,
+        );
+      } else {
+        return;
+      }
+    } else {
+      widget.controller.makeMove(
+        from: pieceMoveData.squareName,
+        to: squareName,
+      );
+      setState(() {});
+    }
+    if (game.turn != moveColor) {
+      widget.onMove?.call();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<Chess>(
@@ -76,7 +117,7 @@ class _ChessBoardState extends State<ChessBoard> {
 
                     var squareName = '$boardFile$boardRank';
                     var pieceOnSquare = game.get(squareName);
-
+                    this.boardMap[index] = squareName;
                     var piece = BoardPiece(
                       squareName: squareName,
                       game: game,
@@ -84,9 +125,37 @@ class _ChessBoardState extends State<ChessBoard> {
 
                     var draggable = game.get(squareName) != null
                         ? GestureDetector(
-                            onTap: () {
-                              print(piece.squareName);
-                              print(game.moves({'square': piece.squareName}));
+                            onTapDown: (details) {
+                              setState(() {
+                                selectedPieceData = PieceMoveData(
+                                    squareName: squareName,
+                                    pieceType:
+                                        pieceOnSquare?.type.toUpperCase() ??
+                                            'P',
+                                    pieceColor:
+                                        pieceOnSquare?.color ?? Color.WHITE);
+                                var moves = game.moves({
+                                  'square': this.selectedPieceData.squareName,
+                                  'verbose': true
+                                });
+                                moves.forEach((move) {
+                                  this
+                                      .selectedPieceMoves
+                                      .add(PossibleMoves(move));
+                                });
+
+                                // for (var i = 0;
+                                //     i < this.selectedPieceMoves.length;
+                                //     i++) {
+                                //   var len = selectedPieceMoves[i].length;
+                                //   if (len != 2)
+                                //     this.selectedPieceMoves[i] = this
+                                //         .selectedPieceMoves[i]
+                                //         .substring(len - 2, len);
+                                // }
+                                print(piece.squareName);
+                                print(selectedPieceMoves);
+                              });
                             },
                             child: Draggable<PieceMoveData>(
                               child: piece,
@@ -101,45 +170,27 @@ class _ChessBoardState extends State<ChessBoard> {
                             ))
                         : Container();
 
-                    var dragTarget = Container(
-                        child: DragTarget<PieceMoveData>(
-                            builder: (context, list, _) {
-                      return draggable;
-                    }, onWillAccept: (pieceMoveData) {
-                      return widget.enableUserMoves ? true : false;
-                    }, onAccept: (PieceMoveData pieceMoveData) async {
-                      // A way to check if move occurred.
-                      Color moveColor = game.turn;
-
-                      if (pieceMoveData.pieceType == "P" &&
-                          ((pieceMoveData.squareName[1] == "7" &&
-                                  squareName[1] == "8" &&
-                                  pieceMoveData.pieceColor == Color.WHITE) ||
-                              (pieceMoveData.squareName[1] == "2" &&
-                                  squareName[1] == "1" &&
-                                  pieceMoveData.pieceColor == Color.BLACK))) {
-                        var val = await _promotionDialog(context);
-
-                        if (val != null) {
-                          widget.controller.makeMoveWithPromotion(
-                            from: pieceMoveData.squareName,
-                            to: squareName,
-                            pieceToPromoteTo: val,
-                          );
-                        } else {
-                          return;
-                        }
-                      } else {
-                        widget.controller.makeMove(
-                          from: pieceMoveData.squareName,
-                          to: squareName,
-                        );
-                      }
-                      if (game.turn != moveColor) {
-                        widget.onMove?.call();
-                      }
-                    }));
-
+                    var boxDecoration = (this
+                            .selectedPieceMoves
+                            .contains(squareName))
+                        ? BoxDecoration(
+                            border: Border.all(color: Colors.black, width: 2.0))
+                        : null;
+                    var dragTarget = GestureDetector(
+                        onTap: () {
+                          checkAndMakeMove(
+                              this.selectedPieceData, game, squareName);
+                        },
+                        child: Container(
+                            decoration: boxDecoration,
+                            child: DragTarget<PieceMoveData>(
+                                builder: (context, list, _) {
+                              return draggable;
+                            }, onWillAccept: (pieceMoveData) {
+                              return widget.enableUserMoves ? true : false;
+                            }, onAccept: (PieceMoveData pieceMoveData) async {
+                              checkAndMakeMove(pieceMoveData, game, squareName);
+                            })));
                     return dragTarget;
                   },
                   itemCount: 64,
@@ -304,6 +355,22 @@ class BoardPiece extends StatelessWidget {
     }
 
     return imageToDisplay;
+  }
+}
+
+class PossibleMoves {
+  late final String san;
+  late final String to;
+  late final String from;
+  late final String? captured;
+  late final String flags;
+
+  PossibleMoves(Map<String, String> move) {
+    this.san = move['san']!;
+    this.to = move['to']!;
+    this.from = move['from']!;
+    this.captured = move['captured'];
+    this.flags = move['flags']!;
   }
 }
 
