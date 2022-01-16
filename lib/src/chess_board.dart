@@ -45,7 +45,6 @@ class ChessBoard extends StatefulWidget {
 class _ChessBoardState extends State<ChessBoard> {
   @override
   Widget build(BuildContext context) {
-    print("Hello world");
     return ValueListenableBuilder<Chess>(
       valueListenable: widget.controller,
       builder: (context, game, _) {
@@ -257,7 +256,7 @@ class BoardPiece extends StatelessWidget {
 
     switch (piece) {
       case "WP":
-        imageToDisplay = WhitePawn();
+        imageToDisplay = WhiteQueen();
         break;
       case "WR":
         imageToDisplay = WhiteRook();
