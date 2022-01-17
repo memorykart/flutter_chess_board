@@ -1,5 +1,6 @@
 import 'package:chess/chess.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_chess_board/flutter_chess_board.dart';
 import 'constants.dart';
 
 class ChessBoardController extends ValueNotifier<Chess> {
@@ -22,6 +23,12 @@ class ChessBoardController extends ValueNotifier<Chess> {
     game.move({"from": from, "to": to});
     notifyListeners();
   }
+
+  // void makeMove({required PossibleMoves move}) {
+
+  //   game.move({"from": from, "to": to});
+  //   notifyListeners();
+  // }
 
   /// Makes move and promotes pawn to piece (from is a square like d4, to is also a square like e3, pieceToPromoteTo is a String like "Q".
   /// pieceToPromoteTo String will be changed to enum in a future update and this method will be deprecated in the future

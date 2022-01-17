@@ -45,24 +45,30 @@ class ChessBoard extends StatefulWidget {
 class _ChessBoardState extends State<ChessBoard> {
   List<PossibleMoves> selectedPieceMoves = [];
 
-  late List<String> lastMove;
-
-  Map<int, String> boardMap = {};
+  PossibleMoves? lastMove = null;
 
   late PieceMoveData selectedPieceData;
 
+  Color? inCheck = null;
+
+  PossibleMoves getCurrentMove(
+      PieceMoveData pieceMoveData, Chess game, String squareName) {
+    var moves =
+        game.moves({'square': pieceMoveData.squareName, 'verbose': true});
+    var i;
+    for (i = 0; i < moves.length; i++) {
+      if (moves[i]['to'] == squareName) break;
+    }
+    return PossibleMoves(moves[i]);
+  }
+
   checkAndMakeMove(
-      PieceMoveData pieceMoveData, var game, var squareName) async {
+      PieceMoveData pieceMoveData, Chess game, String squareName) async {
     // A way to check if move occurred.
     Color moveColor = game.turn;
-
-    if (pieceMoveData.pieceType == "P" &&
-        ((pieceMoveData.squareName[1] == "7" &&
-                squareName[1] == "8" &&
-                pieceMoveData.pieceColor == Color.WHITE) ||
-            (pieceMoveData.squareName[1] == "2" &&
-                squareName[1] == "1" &&
-                pieceMoveData.pieceColor == Color.BLACK))) {
+    PossibleMoves currentMove = getCurrentMove(pieceMoveData, game, squareName);
+    print("current Move: $currentMove");
+    if (currentMove.flags.contains('p')) {
       var val = await _promotionDialog(context);
 
       if (val != null) {
@@ -71,6 +77,8 @@ class _ChessBoardState extends State<ChessBoard> {
           to: squareName,
           pieceToPromoteTo: val,
         );
+        this.lastMove = currentMove;
+        print("Move1: from: ${pieceMoveData.squareName}  to: $squareName");
       } else {
         return;
       }
@@ -79,10 +87,19 @@ class _ChessBoardState extends State<ChessBoard> {
         from: pieceMoveData.squareName,
         to: squareName,
       );
-      setState(() {});
+      this.lastMove = currentMove;
+      print("Move2: from: ${pieceMoveData.squareName}  to: $squareName");
+      setState(() {
+        this.selectedPieceMoves = [];
+      });
     }
     if (game.turn != moveColor) {
       widget.onMove?.call();
+    }
+    if (game.in_check) {
+      inCheck = game.turn;
+    } else {
+      this.inCheck = null;
     }
   }
 
@@ -117,7 +134,6 @@ class _ChessBoardState extends State<ChessBoard> {
 
                     var squareName = '$boardFile$boardRank';
                     var pieceOnSquare = game.get(squareName);
-                    this.boardMap[index] = squareName;
                     var piece = BoardPiece(
                       squareName: squareName,
                       game: game,
@@ -127,34 +143,31 @@ class _ChessBoardState extends State<ChessBoard> {
                         ? GestureDetector(
                             onTapDown: (details) {
                               setState(() {
-                                selectedPieceData = PieceMoveData(
-                                    squareName: squareName,
-                                    pieceType:
-                                        pieceOnSquare?.type.toUpperCase() ??
-                                            'P',
-                                    pieceColor:
-                                        pieceOnSquare?.color ?? Color.WHITE);
-                                var moves = game.moves({
-                                  'square': this.selectedPieceData.squareName,
-                                  'verbose': true
-                                });
-                                moves.forEach((move) {
-                                  this
-                                      .selectedPieceMoves
-                                      .add(PossibleMoves(move));
-                                });
-
-                                // for (var i = 0;
-                                //     i < this.selectedPieceMoves.length;
-                                //     i++) {
-                                //   var len = selectedPieceMoves[i].length;
-                                //   if (len != 2)
-                                //     this.selectedPieceMoves[i] = this
-                                //         .selectedPieceMoves[i]
-                                //         .substring(len - 2, len);
-                                // }
-                                print(piece.squareName);
-                                print(selectedPieceMoves);
+                                if (game.turn ==
+                                    (pieceOnSquare?.color ?? Color.WHITE)) {
+                                  selectedPieceData = PieceMoveData(
+                                      squareName: squareName,
+                                      pieceType:
+                                          pieceOnSquare?.type.toUpperCase() ??
+                                              'P',
+                                      pieceColor:
+                                          pieceOnSquare?.color ?? Color.WHITE);
+                                  var moves = game.moves({
+                                    'square': this.selectedPieceData.squareName,
+                                    'verbose': true
+                                  });
+                                  this.selectedPieceMoves = [];
+                                  moves.forEach((move) {
+                                    this
+                                        .selectedPieceMoves
+                                        .add(PossibleMoves(move));
+                                  });
+                                  print(piece.squareName);
+                                  print(selectedPieceMoves);
+                                } else {
+                                  checkAndMakeMove(
+                                      selectedPieceData, game, squareName);
+                                }
                               });
                             },
                             child: Draggable<PieceMoveData>(
@@ -169,13 +182,29 @@ class _ChessBoardState extends State<ChessBoard> {
                               ),
                             ))
                         : Container();
-
-                    var boxDecoration = (this
-                            .selectedPieceMoves
-                            .contains(squareName))
+                    bool isMove = false;
+                    this.selectedPieceMoves.forEach((move) {
+                      if (move.to == squareName) isMove = true;
+                    });
+                    var boxDecoration = isMove
                         ? BoxDecoration(
                             border: Border.all(color: Colors.black, width: 2.0))
                         : null;
+                    if (pieceOnSquare?.type.toUpperCase() == 'K' &&
+                        this.inCheck == pieceOnSquare?.color) {
+                      boxDecoration = BoxDecoration(
+                          border: Border.all(
+                              color: Colors.red.shade900, width: 2.0));
+                    }
+                    if (this.lastMove != null) {
+                      if (this.lastMove!.from == squareName) {
+                        boxDecoration =
+                            BoxDecoration(color: Colors.teal.shade700);
+                      } else if (this.lastMove!.to == squareName) {
+                        boxDecoration =
+                            BoxDecoration(color: Colors.teal.shade200);
+                      }
+                    }
                     var dragTarget = GestureDetector(
                         onTap: () {
                           checkAndMakeMove(
@@ -359,18 +388,23 @@ class BoardPiece extends StatelessWidget {
 }
 
 class PossibleMoves {
-  late final String san;
-  late final String to;
-  late final String from;
-  late final String? captured;
-  late final String flags;
+  late final dynamic san;
+  late final dynamic to;
+  late final dynamic from;
+  late final dynamic captured;
+  late final dynamic flags;
 
-  PossibleMoves(Map<String, String> move) {
-    this.san = move['san']!;
-    this.to = move['to']!;
-    this.from = move['from']!;
+  PossibleMoves(Map<String, dynamic> move) {
+    this.san = move['san'];
+    this.to = move['to'];
+    this.from = move['from'];
     this.captured = move['captured'];
-    this.flags = move['flags']!;
+    this.flags = move['flags'];
+  }
+
+  @override
+  String toString() {
+    return "{san: ${this.san}, to: ${this.to}, from: ${this.from}, captured: ${this.captured}, flags: ${this.flags}}";
   }
 }
 
