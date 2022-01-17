@@ -64,6 +64,9 @@ class _ChessBoardState extends State<ChessBoard> {
 
   checkAndMakeMove(
       PieceMoveData pieceMoveData, Chess game, String squareName) async {
+    if (!widget.enableUserMoves) {
+      return;
+    }
     // A way to check if move occurred.
     Color moveColor = game.turn;
     PossibleMoves currentMove = getCurrentMove(pieceMoveData, game, squareName);
