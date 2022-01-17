@@ -189,23 +189,20 @@ class _ChessBoardState extends State<ChessBoard> {
                     this.selectedPieceMoves.forEach((move) {
                       if (move.to == squareName) isMove = true;
                     });
-                    var boxDecoration = isMove
-                        ? BoxDecoration(
-                            border: Border.all(color: Colors.black, width: 2.0))
+                    var border = isMove
+                        ? Border.all(color: Colors.black, width: 2.0)
                         : null;
                     if (pieceOnSquare?.type.toUpperCase() == 'K' &&
                         this.inCheck == pieceOnSquare?.color) {
-                      boxDecoration = BoxDecoration(
-                          border: Border.all(
-                              color: Colors.red.shade900, width: 2.0));
+                      border =
+                          Border.all(color: Colors.red.shade900, width: 2.0);
                     }
+                    var color = null;
                     if (this.lastMove != null) {
                       if (this.lastMove!.from == squareName) {
-                        boxDecoration =
-                            BoxDecoration(color: Colors.teal.shade700);
+                        color = Colors.teal.shade700;
                       } else if (this.lastMove!.to == squareName) {
-                        boxDecoration =
-                            BoxDecoration(color: Colors.teal.shade200);
+                        color = Colors.teal.shade200;
                       }
                     }
                     var dragTarget = GestureDetector(
@@ -214,7 +211,8 @@ class _ChessBoardState extends State<ChessBoard> {
                               this.selectedPieceData, game, squareName);
                         },
                         child: Container(
-                            decoration: boxDecoration,
+                            decoration:
+                                BoxDecoration(border: border, color: color),
                             child: DragTarget<PieceMoveData>(
                                 builder: (context, list, _) {
                               return draggable;
